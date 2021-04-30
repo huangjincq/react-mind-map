@@ -11,7 +11,7 @@ interface NodesCanvasProps {
   onSegmentConnect: (id: string, targetPort: string) => void
   onShowSelectModel: (event: MouseEvent, input: string) => void
   activeNodeIds: string[]
-  onNodePositionChange: (id: string, nextCoords: ICoordinateType) => void
+  onNodePositionChange: (id: string, nextCoords: ICoordinateType, info: any) => void
   onNodeValueChange: (id: string, nextNodeValue: any) => void
   onAddHistory: (id: string, nextCoords: ICoordinateType) => void
   onNodeDelete: (nodeId: string) => void
@@ -20,7 +20,7 @@ interface NodesCanvasProps {
 }
 
 export const NodesCanvas: React.FC<NodesCanvasProps> = React.memo((props) => {
-  const {nodes, activeNodeIds, ...others} = props
+  const { nodes, activeNodeIds, ...others } = props
 
   return (
     <>

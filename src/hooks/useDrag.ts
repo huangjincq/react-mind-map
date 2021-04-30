@@ -43,6 +43,7 @@ const useDrag = (options = defaultOptions) => {
   const dragStartHandlerRef = useRef<any>()
   const dragHandlerRef = useRef<any>()
   const dragEndHandlerRef = useRef<any>()
+  const preXRef = useRef(0)
   const { current: info } = useRef<InfoType>({ isDragging: false, start: [0, 0], end: [0, 0], offset: [0, 0] })
 
   const onDragStart = useCallback(
@@ -70,11 +71,19 @@ const useDrag = (options = defaultOptions) => {
   const onDrag = useCallback(
     throttle((event) => {
       if (info.isDragging) {
+        let direction = ''
+        if (event.clientX > preXRef.current) {
+          direction = 'right'
+        }
+        if (event.clientX < preXRef.current) {
+          direction = 'left'
+        }
         info.offset = [event.clientX - info.start[0], event.clientY - info.start[1]]
 
         if (dragHandlerRef.current) {
-          dragHandlerRef.current(event, { ...info })
+          dragHandlerRef.current(event, { ...info, direction })
         }
+        preXRef.current = event.clientX
       }
     }, options.throttleBy),
     [targetRef, info, dragHandlerRef]

@@ -11,25 +11,23 @@ import {
   checkIsFocusInPanel,
   checkMouseDownTargetIsDrawPanel,
   collideCheck,
-  oneNodeDelete
+  oneNodeDelete,
 } from './utils'
 import { useHotkeys } from 'react-hotkeys-hook'
 import useEventCallback from './hooks/useEventCallback'
 import useEventListener from './hooks/useEventListener'
 import {
   HOT_KEY_COPY,
-  HOT_KEY_DEL, HOT_KEY_PASTE,
+  HOT_KEY_DEL,
+  HOT_KEY_PASTE,
   HOT_KEY_REDO,
   HOT_KEY_SELECT_ALL,
   HOT_KEY_SPACE,
-  HOT_KEY_UNDO
+  HOT_KEY_UNDO,
 } from './constant/hotKeys'
 import { CURSOR_MAP, DRAG_STATE, SCALE_STEP } from './constant'
 import { defaultValue } from './utils/creatMockData'
 // import { useThrottleFn } from 'react-use'
-
-
-
 
 function DiagramPanel() {
   const {
@@ -40,14 +38,14 @@ function DiagramPanel() {
     undo: handleUndo,
     redo: handleRedo,
     canUndo,
-    canRedo
+    canRedo,
   } = useHistory(defaultValue)
 
   const value = present as IDiagramType
   const [transform, setTransform] = useState<ITransform>({
     scale: 1,
     translateX: 0,
-    translateY: 0
+    translateY: 0,
   })
   const [selectionArea, setSelectionArea] = useState<ISelectionArea | undefined>()
   const [dragState, setDragState] = useState<string>(DRAG_STATE.DEFAULT)
@@ -60,7 +58,7 @@ function DiagramPanel() {
   const batchCopyActiveNodeIdsRef = useRef<string[]>([])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const panelRect = useMemo(() => panelRef.current?.getBoundingClientRect() || {x: 0, y: 0}, [panelRef.current])
+  const panelRect = useMemo(() => panelRef.current?.getBoundingClientRect() || { x: 0, y: 0 }, [panelRef.current])
 
   // eslint-disable-next-line
   const handleThrottleSetTransform = useCallback(
@@ -102,7 +100,7 @@ function DiagramPanel() {
       )
 
       const newNode = createNode(nodeType, coordinates)
-      handleChange({...value, nodes: [...value.nodes, newNode]})
+      handleChange({ ...value, nodes: [...value.nodes, newNode] })
     },
     [handleChange, transform, value]
   )
@@ -116,7 +114,7 @@ function DiagramPanel() {
 
     const wheelDelta = event.wheelDelta
 
-    let {scale, translateX, translateY} = transform
+    let { scale, translateX, translateY } = transform
 
     const offsetX = ((event.clientX - panelRect.x - translateX) * SCALE_STEP) / scale
     const offsetY = ((event.clientY - panelRect.y - translateY) * SCALE_STEP) / scale
@@ -137,7 +135,7 @@ function DiagramPanel() {
     handleThrottleSetTransform({
       scale: Number(scale.toFixed(2)),
       translateX,
-      translateY
+      translateY,
     })
   })
 
@@ -146,7 +144,7 @@ function DiagramPanel() {
       x: event.clientX,
       y: event.clientY,
       relativeX: event.clientX - transform.translateX,
-      relativeY: event.clientY - transform.translateY
+      relativeY: event.clientY - transform.translateY,
     }
     if (checkMouseDownTargetIsDrawPanel(event, panelRef.current)) {
       if (dragState === DRAG_STATE.START) {
@@ -167,7 +165,7 @@ function DiagramPanel() {
           left: Math.min(e.clientX, mouseDownStartPosition.current.x) - panelRect.x,
           top: Math.min(e.clientY, mouseDownStartPosition.current.y) - panelRect.y,
           width: Math.abs(e.clientX - mouseDownStartPosition.current.x),
-          height: Math.abs(e.clientY - mouseDownStartPosition.current.y)
+          height: Math.abs(e.clientY - mouseDownStartPosition.current.y),
         })
         const selectAreaDom = selectionAreaRef.current
         const activeNodeIds = value.nodes
@@ -197,7 +195,7 @@ function DiagramPanel() {
       handleThrottleSetTransform({
         ...transform,
         translateX: event.clientX - mouseDownStartPosition.current.relativeX,
-        translateY: event.clientY - mouseDownStartPosition.current.relativeY
+        translateY: event.clientY - mouseDownStartPosition.current.relativeY,
       })
     }
 
@@ -224,8 +222,8 @@ function DiagramPanel() {
 
   const handleBatchDelete = useEventCallback(() => {
     if (checkIsFocusInPanel(panelRef.current) && activeNodeIds.length) {
-      let nextValue = {...value}
-      activeNodeIds.forEach(nodeId => {
+      let nextValue = { ...value }
+      activeNodeIds.forEach((nodeId) => {
         nextValue = oneNodeDelete(nextValue, nodeId)
       })
       handleChange(nextValue)
@@ -244,16 +242,16 @@ function DiagramPanel() {
     if (checkIsFocusInPanel(panelRef.current)) {
       event.preventDefault()
       const nextValue = batchCopyActiveNodeIdsRef.current.map((nodeId: string) => {
-        const nodeIndex = batchCopyNodesRef.current.findIndex(node => node.id === nodeId)
+        const nodeIndex = batchCopyNodesRef.current.findIndex((node) => node.id === nodeId)
         return copyNode(batchCopyNodesRef.current[nodeIndex])
       })
-      handleChange({...value, nodes: [...value.nodes, ...nextValue]})
+      handleChange({ ...value, nodes: [...value.nodes, ...nextValue] })
     }
   })
 
   const handleToggleActiveNodeId = useEventCallback((nodeId: string) => {
     let nextActiveNodeIds = [...activeNodeIds]
-    const findIndex = nextActiveNodeIds.findIndex(activeNodeId => activeNodeId === nodeId)
+    const findIndex = nextActiveNodeIds.findIndex((activeNodeId) => activeNodeId === nodeId)
     if (findIndex > -1) {
       nextActiveNodeIds.splice(findIndex, 1)
     } else {
@@ -273,7 +271,7 @@ function DiagramPanel() {
       left: selectionArea?.left,
       top: selectionArea?.top,
       width: selectionArea?.width,
-      height: selectionArea?.height
+      height: selectionArea?.height,
     }),
     [selectionArea]
   )
@@ -287,7 +285,7 @@ function DiagramPanel() {
   useHotkeys(HOT_KEY_PASTE, handleBatchPaste, {}, [handleBatchPaste])
   useHotkeys(HOT_KEY_SELECT_ALL, handleSelectAll, {}, [handleSelectAll])
   useHotkeys(HOT_KEY_DEL, handleBatchDelete, {}, [handleBatchDelete])
-  useHotkeys(HOT_KEY_SPACE, handleSpaceHotKey, {keyup: true, keydown: true}, [handleSpaceHotKey])
+  useHotkeys(HOT_KEY_SPACE, handleSpaceHotKey, { keyup: true, keydown: true }, [handleSpaceHotKey])
 
   useEventListener('wheel', handleWheel)
 
@@ -305,11 +303,12 @@ function DiagramPanel() {
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         tabIndex={1}
-        style={{cursor}}
+        style={{ cursor }}
       >
         <Diagram
           value={value}
           transform={transform}
+          onTranslateChange={handleThrottleSetTransform}
           onChange={handleChange}
           onAddHistory={handleAddHistory}
           activeNodeIds={activeNodeIds}
@@ -322,8 +321,8 @@ function DiagramPanel() {
           style={selectionAreaStyled}
         />
       </div>
-      <Toolbar undo={handleUndo} redo={handleRedo} canUndo={canUndo} scale={transform.scale} canRedo={canRedo}/>
-      <NodeList/>
+      <Toolbar undo={handleUndo} redo={handleRedo} canUndo={canUndo} scale={transform.scale} canRedo={canRedo} />
+      <NodeList />
     </>
   )
 }

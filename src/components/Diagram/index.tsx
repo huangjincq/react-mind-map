@@ -32,11 +32,12 @@ interface DiagramProps {
   transform: ITransform
   activeNodeIds: string[]
   onToggleActiveNodeId: (nodeId: string) => void
+  onTranslateChange: (transform: ITransform) => void
 }
 const STEP_COUNT = 60 // auto layout 动画执行总次数
 
 export const Diagram: React.FC<DiagramProps> = React.memo((props) => {
-  const { value, onChange, onAddHistory, transform, activeNodeIds, onToggleActiveNodeId } = props
+  const { value, onChange, onAddHistory, transform, activeNodeIds, onToggleActiveNodeId, onTranslateChange } = props
   const [segment, setSegment] = useState<ISegmentType | undefined>()
   const [selectModelPosition, setSelectModelPosition] = useState<ICoordinateType>()
   const { current: portRefs } = useRef<IPortRefs>({}) // 保存所有 Port 的 Dom 节点
@@ -46,8 +47,86 @@ export const Diagram: React.FC<DiagramProps> = React.memo((props) => {
   const nodeWithStepRef = useRef<INodeTypeWithStep[]>([]) // 储存 auto layout node动画每个node 的步长
   const animationCountRef = useRef<number>(0) // 动画执行次数
 
-  const handleNodePositionChange = useEventCallback((nodeId: string, nextCoordinates: ICoordinateType) => {
-    const nextNodes = batchUpdateCoordinates(nodeId, nextCoordinates, value.nodes, activeNodeIds)
+  const xMovingRef = useRef<number>(0) // 到边缘移动 用来计数的
+
+  const xMoveEndRef = useRef<number>(0) // 到边缘移动 用来计数的
+  const bbbRef = useRef<any>([0, 0]) //
+  const timer = useRef<any>(null) // 动画执行次数
+
+  const clearMoveTimer = useCallback(() => {
+    if (timer.current) {
+      clearInterval(timer.current)
+      timer.current = null
+      xMovingRef.current = 0
+    }
+  }, [])
+
+  const handleNodePositionChange = useEventCallback((nodeId: string, nextCoordinates: ICoordinateType, info: any) => {
+    const moveNode = document.getElementById(nodeId)
+    const diagramPanelRect = document.getElementById('diagram-panel')?.getBoundingClientRect()
+    const moveNodeRect = moveNode?.getBoundingClientRect()
+
+    if (diagramPanelRect && moveNodeRect) {
+      const offsetLeft = moveNodeRect.x - diagramPanelRect.x
+
+      if (info.direction === 'left') {
+        if (timer.current) return
+        if (offsetLeft < 0) {
+          if (!timer.current) {
+            bbbRef.current = [nextCoordinates[0] - xMoveEndRef.current / transform.scale, nextCoordinates[1]]
+            timer.current = setInterval(() => {
+              xMovingRef.current = xMovingRef.current + 10 * transform.scale
+              bbbRef.current[0] = bbbRef.current[0] - 10
+              onTranslateChange({
+                ...transform,
+                translateX: transform.translateX + xMovingRef.current,
+              })
+              const nextNodes = batchUpdateCoordinates(nodeId, bbbRef.current, value.nodes, activeNodeIds)
+
+              onChange({ ...value, nodes: nextNodes }, true)
+            }, 20)
+            // }
+          }
+        }
+      } else {
+        xMoveEndRef.current = xMovingRef.current ? xMoveEndRef.current + xMovingRef.current : xMoveEndRef.current
+
+        console.log('xMoveEndRef.current', xMoveEndRef.current)
+
+        clearMoveTimer()
+      }
+      // if (offsetLeft < 0 || timer.current) {
+      //   if (!timer.current) {
+      //     timer.current = true
+      //     aaaRef.current = transform.translateX
+      //     bbbRef.current = nextCoordinates
+
+      //     timer.current = setInterval(() => {
+      //       aaaRef.current = aaaRef.current + 10
+      //       bbbRef.current[0] = bbbRef.current[0] - 10
+      //       onTranslateChange({
+      //         ...transform,
+      //         translateX: aaaRef.current,
+      //       })
+      //       const nextNodes = batchUpdateCoordinates(nodeId, bbbRef.current, value.nodes, activeNodeIds)
+
+      //       onChange({ ...value, nodes: nextNodes }, true)
+      //     }, 100)
+      //   }
+      // } else {
+      //   timer.current && clearInterval(timer.current)
+      //   timer.current = null
+      // }
+    }
+    console.log('手动位置')
+
+    const nextNodes = batchUpdateCoordinates(
+      nodeId,
+      [nextCoordinates[0] - xMoveEndRef.current / transform.scale, nextCoordinates[1]],
+      value.nodes,
+      activeNodeIds
+    )
+
     onChange({ ...value, nodes: nextNodes }, true)
   })
 
@@ -60,6 +139,10 @@ export const Diagram: React.FC<DiagramProps> = React.memo((props) => {
 
   const handleAddHistory = useEventCallback((nodeId: string, nextCoordinates: ICoordinateType) => {
     const nextNodes = batchUpdateCoordinates(nodeId, nextCoordinates, value.nodes, activeNodeIds)
+    clearMoveTimer()
+    xMoveEndRef.current = 0
+    console.log('自动移动的距离', xMoveEndRef.current)
+
     onAddHistory({ ...value, nodes: nextNodes })
   })
 
@@ -188,7 +271,7 @@ export const Diagram: React.FC<DiagramProps> = React.memo((props) => {
       />
       {value.links.length > 0 && <LinksCanvas nodes={value.nodes} links={value.links} onDelete={onLinkDelete} />}
       {segment && <Segment segment={segment} />}
-      <MarkLine onNodePositionChange={handleNodePositionChange} />
+      {/* <MarkLine onNodePositionChange={handleNodePositionChange} /> */}
       <SelectModel position={selectModelPosition} onChange={handleSelectModelChange} />
     </DiagramCanvas>
   )

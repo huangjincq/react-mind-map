@@ -11,7 +11,7 @@ import eventBus, { EVENT_NODE_MOVE_END, EVENT_NODE_MOVING } from '../../utils/ev
 
 interface DiagramNodeProps {
   nodeInfo: INodeType
-  onNodePositionChange: (id: string, nextCoords: ICoordinateType) => void
+  onNodePositionChange: (id: string, nextCoords: ICoordinateType, info: any) => void
   onNodeValueChange: (id: string, nextNodeValue: any) => void
   onAddHistory: (id: string, nextCoords: ICoordinateType) => void
   onNodeMount: (id: string, dom: HTMLDivElement) => void
@@ -80,7 +80,7 @@ export const DiagramNode: React.FC<DiagramNodeProps> = React.memo((props) => {
       dragStartPoint.current[1] + info.offset[1] / scale,
     ]
 
-    onNodePositionChange(id, nextCoords)
+    onNodePositionChange(id, nextCoords, info)
     eventBus.emit(EVENT_NODE_MOVING, id, nextCoords)
   })
 
